@@ -587,7 +587,7 @@ class FlaggedTask(Task):
 
     def reply(self, text):
         """Send an email reply to the user that raised the flag."""
-        support.delay(self.user, text, self)
+        support.delay(self.user.pk, text, self.pk)
 
     def create_zoho_ticket(self):
         """Create a Zoho ticket"""
@@ -676,7 +676,7 @@ class FlaggedTask(Task):
             obj = getattr(self, obj_name)
             if obj:
                 description += "\n{}{}".format(
-                    settings.MUCKROCK_URL, obj.get_absolute_url(),
+                    settings.MUCKROCK_URL, obj.get_absolute_url()
                 )
                 tags.append("{}_flag".format(obj_name))
 
