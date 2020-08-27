@@ -86,18 +86,6 @@ def coverage(c, settings="test", reuse="0", codeship=False):
 @task
 def pylint(c, codeship=False):
     """Run the linter"""
-<<<<<<< HEAD
-    c.run(
-        DOCKER_COMPOSE_RUN_OPT.format(
-            opt="-e DJANGO_SETTINGS_MODULE=muckrock.settings.local",
-            service="muckrock_django",
-            cmd="pylint muckrock --rcfile=config/pylint.conf",
-||||||| merged common ancestors
-    c.run(
-        DJANGO_RUN.format(
-            cmd="pylint muckrock --rcfile=config/pylint.conf "
-            "--jobs=$(expr $(nproc) / 2)"
-=======
     cmd = "pylint muckrock --rcfile=config/pylint.conf"
     if codeship:
         c.run(cmd)
@@ -108,7 +96,6 @@ def pylint(c, codeship=False):
                 service="muckrock_django",
                 cmd=cmd,
             )
->>>>>>> python3
         )
 
 
