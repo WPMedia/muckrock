@@ -43,6 +43,7 @@ import requests
 from boto.s3.connection import S3Connection
 from constance import config
 from django_mailgun import MailgunAPIError
+from documentcloud import DocumentCloud
 from phaxio import PhaxioApi
 from phaxio.exceptions import PhaxioError
 from raven import Client
@@ -81,15 +82,6 @@ register_signal(client)
 lob.api_key = settings.LOB_SECRET_KEY
 
 
-def authenticate_documentcloud(request):
-    """This is just standard username/password encoding"""
-    username = settings.DOCUMENTCLOUD_USERNAME.encode()
-    password = settings.DOCUMENTCLOUD_PASSWORD.encode()
-    auth = base64.encodebytes(b"%s:%s" % (username, password))[:-1]
-    request.add_header("Authorization", "Basic %s" % auth.decode())
-    return request
-
-
 @task(
     ignore_result=True,
     max_retries=10,
@@ -101,13 +93,7 @@ def upload_document_cloud(doc_pk, change, **kwargs):
 
     logger.info("Upload Doc Cloud: %s", doc_pk)
 
-    try:
-        doc = FOIAFile.objects.get(pk=doc_pk)
-    except FOIAFile.DoesNotExist as exc:
-        # give database time to sync
-        upload_document_cloud.retry(
-            countdown=300, args=[doc_pk, change], kwargs=kwargs, exc=exc
-        )
+    doc = FOIAFile.objects.get(pk=doc_pk)
 
     if not doc.is_doccloud():
         # not a file doc cloud supports, do not attempt to upload
@@ -122,6 +108,13 @@ def upload_document_cloud(doc_pk, change, **kwargs):
         # if we are changing it must have an id - this should never happen but it is!
         logger.warning("Upload Doc Cloud: Changing without a doc id: %s", doc.pk)
         return
+
+    client = DocumentCloud(
+        username=settings.DOCUMENTCLOUD_USERNAME,
+        password=settings.DOCUMENTCLOUD_PASSWORD,
+        base_uri=f"{settings.DOCCLOUD_API_URL}/api/",
+        auth_uri=f"{settings.SQUARELET_URL}/api/",
+    )
 
     params = {
         "title": doc.title,
@@ -379,7 +372,7 @@ def send_fax(comm_id, subject, body, error_count, **kwargs):
             batch_delay=settings.PHAXIO_BATCH_DELAY,
             batch_collision_avoidance=True,
             callback_url=callback_url,
-            **{"tag[fax_id]": fax.pk, "tag[error_count]": error_count}
+            **{"tag[fax_id]": fax.pk, "tag[error_count]": error_count},
         )
         fax.fax_id = results["faxId"]
         fax.save()
@@ -501,7 +494,7 @@ def set_all_document_cloud_pages():
     logger.info("Re-upload documents, %d documents with 0 pages", len(docs))
     for doc in docs:
         logger.info("0 page re-upload: %s", doc.pk)
-        upload_document_cloud.apply_async(args=[doc.pk, False])
+        upload_document_cloud.delay(doc.pk, False)
 
 
 @periodic_task(
@@ -517,7 +510,7 @@ def retry_stuck_documents():
     ]
     logger.info("Reupload documents, %d documents are stuck", len(docs))
     for doc in docs:
-        upload_document_cloud.apply_async(args=[doc.pk, False])
+        upload_document_cloud.delay(doc.pk, False)
 
 
 # Increase the time limit for autoimport to 10 hours, and a soft time limit to
@@ -589,6 +582,7 @@ def autoimport():
 
         return foia_pks, file_datetime
 
+    @transaction.atomic
     def import_key(key, storage_bucket, comm, log):
         """Import a key"""
 
@@ -621,7 +615,7 @@ def autoimport():
             % (file_name, foia.pk, foia.status)
         )
 
-        upload_document_cloud.apply_async(args=[foia_file.pk, False], countdown=3)
+        transaction.on_commit(lambda: upload_document_cloud.delay(foia_file.pk, False))
 
     def import_prefix(prefix, bucket, storage_bucket, comm, log):
         """Import a prefix (folder) full of documents"""
@@ -927,7 +921,7 @@ def prepare_snail_mail(comm_pk, category, switch, extra, force=False, **kwargs):
             switch=switch,
             reason=reason,
             error_msg=error_msg,
-            **extra
+            **extra,
         )
 
     if category == "p":
