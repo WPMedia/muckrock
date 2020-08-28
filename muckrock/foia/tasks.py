@@ -92,6 +92,7 @@ def upload_document_cloud(doc_pk, change, **kwargs):
     """Upload a document to Document Cloud"""
     # XXX keep new and old version of code around to deal with changing documents
     # on legacy dc
+    # XXX check and update .dc_legacy
 
     logger.info("Upload Doc Cloud: %s", doc_pk)
 
