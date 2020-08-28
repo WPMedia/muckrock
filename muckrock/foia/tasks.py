@@ -90,6 +90,8 @@ lob.api_key = settings.LOB_SECRET_KEY
 )
 def upload_document_cloud(doc_pk, change, **kwargs):
     """Upload a document to Document Cloud"""
+    # XXX keep new and old version of code around to deal with changing documents
+    # on legacy dc
 
     logger.info("Upload Doc Cloud: %s", doc_pk)
 
@@ -125,35 +127,21 @@ def upload_document_cloud(doc_pk, change, **kwargs):
     foia = doc.get_foia()
     if foia:
         params["related_article"] = (
-            "https://www.muckrock.com" + doc.get_foia().get_absolute_url()
+            settings.MUCKROCK_URL + doc.get_foia().get_absolute_url()
         )
+
     if change:
-        params["_method"] = "put"
-        url = "/documents/%s.json" % quote_plus(doc.doc_id)
+        # XXX error handle
+        # use auto error handling, catch doccloud library error
+        document = client.documents.get(id=doc.doc_id)
+        for attr, value in params.items():
+            setattr(document, attr, value)
+        document.save()
     else:
-        params["file"] = doc.ffile.url.replace("https", "http", 1)
-        url = "/upload.json"
-
-    params = urllib.parse.urlencode(params)
-    params = params.encode("utf8")
-    request = urllib.request.Request(
-        "https://www.documentcloud.org/api/%s" % url, params
-    )
-    request = authenticate_documentcloud(request)
-
-    try:
-        ret = urllib.request.urlopen(request).read()
-        if not change:
-            info = json.loads(ret)
-            doc.doc_id = info["id"]
-            doc.save()
-            set_document_cloud_pages.apply_async(args=[doc.pk], countdown=1800)
-    except (urllib.error.URLError, urllib.error.HTTPError) as exc:
-        logger.warning("Upload Doc Cloud error: %s %s", url, doc.pk)
-        countdown = (2 ** upload_document_cloud.request.retries) * 300 + randint(0, 300)
-        upload_document_cloud.retry(
-            args=[doc.pk, change], kwargs=kwargs, exc=exc, countdown=countdown
-        )
+        # XXX error handle
+        document = client.documents.upload(doc.ffile.url, **params)
+        doc.doc_id = document.id
+        doc.save()
 
 
 @task(
@@ -163,6 +151,7 @@ def upload_document_cloud(doc_pk, change, **kwargs):
 )
 def set_document_cloud_pages(doc_pk, **kwargs):
     """Get the number of pages from the document cloud server and save it locally"""
+    # XXX do this through a callback
 
     try:
         doc = FOIAFile.objects.get(pk=doc_pk)

@@ -47,7 +47,9 @@ class FOIAFile(models.Model):
     access = models.CharField(
         max_length=12, default="public", choices=access, db_index=True
     )
+    # XXX do we want to split to a id and slug field?
     doc_id = models.SlugField(max_length=80, blank=True, editable=False)
+    dc_legacy = models.BooleanField(default=False)
     pages = models.PositiveIntegerField(default=0, editable=False)
 
     def __str__(self):
