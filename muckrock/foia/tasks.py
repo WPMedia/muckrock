@@ -109,6 +109,7 @@ def upload_document_cloud(doc_pk, change, **kwargs):
 
     if not doc.doc_id and change:
         # if we are changing it must have an id - this should never happen but it is!
+        # XXX happens if upload new file from admin
         logger.warning("Upload Doc Cloud: Changing without a doc id: %s", doc.pk)
         return
 
