@@ -145,7 +145,7 @@ def upload_document_cloud(doc_pk, change, **kwargs):
         # XXX pass by url?
         # document = client.documents.upload(doc.ffile.url, **params)
         document = client.documents.upload(doc.ffile, **params)
-        doc.doc_id = document.id
+        doc.doc_id = f"{document.id}-{document.slug}"
         doc.save()
 
 

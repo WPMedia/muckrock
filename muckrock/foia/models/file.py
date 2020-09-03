@@ -88,6 +88,7 @@ class FOIAFile(models.Model):
             index = self.doc_id.index("-")
             num = self.doc_id[0:index]
             name = self.doc_id[index + 1 :]
+            # XXX
             return (
                 "https://assets.documentcloud.org/documents/"
                 + num
