@@ -124,6 +124,8 @@ export function displayFile(file) {
     var title = file.data('title') || 'Untitled';
     var pages = file.data('pages') || 0;
     var legacy = file.data('legacy') === 'True';
+    var iframe = $("#viewer-iframe");
+    var src = file.data("src");
 
     $('#doc-title').empty().text(title);
     $('#doc-pages').empty().text(pages);
@@ -139,7 +141,8 @@ export function displayFile(file) {
             {sidebar: false, container: "#viewer"}
         );
     } else {
-        // load new embed in an iframe
+        // load new embed in the iframe
+        iframe.attr("src", src);
     }
 
     activeFile.addClass('visible');
