@@ -139,6 +139,7 @@ export function displayFile(file) {
             {sidebar: false, container: "#viewer"}
         );
     } else {
+        // load new embed in an iframe
     }
 
     activeFile.addClass('visible');
