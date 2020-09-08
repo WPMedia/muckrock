@@ -125,7 +125,6 @@ export function displayFile(file) {
     var pages = file.data('pages') || 0;
     var legacy = file.data('legacy') === 'True';
     var iframe = $("#viewer-iframe");
-    var src = file.data("src");
 
     $('#doc-title').empty().text(title);
     $('#doc-pages').empty().text(pages);
@@ -134,6 +133,7 @@ export function displayFile(file) {
     files.parent('li').removeClass('active');
     files.filter(file).parent('li').addClass('active');
 
+    // XXX need to show/hide div/iframe apprprioately and make iframe 100% width
     if (legacy) {
         /* DV is defined by the external DocumentCloud script at runtime. */
         DV.load(
@@ -142,7 +142,12 @@ export function displayFile(file) {
         );
     } else {
         // load new embed in the iframe
-        iframe.attr("src", src);
+        // XXX make this configurable
+        var url = "http://www.dev.documentcloud.org/";
+        iframe.attr(
+            "src",
+            url + "documents/" + docId + "/?embed=1&amp;title=1"
+        );
     }
 
     activeFile.addClass('visible');
