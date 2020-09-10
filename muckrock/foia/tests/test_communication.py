@@ -17,6 +17,7 @@ from nose.tools import eq_, ok_, raises
 # MuckRock
 from muckrock.communication.models import EmailAddress
 from muckrock.core.factories import UserFactory
+from muckrock.core.test_utils import RunCommitHooksMixin
 from muckrock.foia.factories import (
     FOIACommunicationFactory,
     FOIAFileFactory,
@@ -87,7 +88,7 @@ class TestCommunication(test.TestCase):
         self.comm.make_sender_primary_contact()
 
 
-class TestCommunicationMove(test.TestCase):
+class TestCommunicationMove(RunCommitHooksMixin, test.TestCase):
     """Tests the move method"""
 
     def setUp(self):
@@ -98,7 +99,7 @@ class TestCommunicationMove(test.TestCase):
         eq_(self.comm.files.count(), 1)
         self.user = UserFactory()
 
-    @patch("muckrock.foia.tasks.upload_document_cloud.apply_async")
+    @patch("muckrock.foia.tasks.upload_document_cloud.delay")
     def test_move_single_comm(self, mock_upload):
         """Should change the request associated with the communication."""
         moved_comms = self.comm.move([self.foia2.pk], self.user)
@@ -130,9 +131,11 @@ class TestCommunicationMove(test.TestCase):
                 communication=moved_comm, foia=self.foia1, user=self.user
             ).exists()
         )
+
+        self.run_commit_hooks()
         mock_upload.assert_called()
 
-    @patch("muckrock.foia.tasks.upload_document_cloud.apply_async")
+    @patch("muckrock.foia.tasks.upload_document_cloud.delay")
     def test_move_multi_comms(self, mock_upload):
         """Should move the comm to the first request, then clone it to the rest."""
         comm_count = FOIACommunication.objects.count()
@@ -170,6 +173,7 @@ class TestCommunicationMove(test.TestCase):
                     communication=comm, foia=self.foia1, user=self.user
                 ).exists()
             )
+        self.run_commit_hooks()
         mock_upload.assert_called()
 
     @raises(ValueError)
@@ -206,7 +210,7 @@ class TestCommunicationMove(test.TestCase):
         self.comm.move([self.foia2.pk], self.user)
 
 
-class TestCommunicationClone(test.TestCase):
+class TestCommunicationClone(RunCommitHooksMixin, test.TestCase):
     """Tests the clone method"""
 
     def setUp(self):
@@ -215,7 +219,7 @@ class TestCommunicationClone(test.TestCase):
         ok_(self.file in self.comm.files.all())
         self.user = UserFactory()
 
-    @patch("muckrock.foia.tasks.upload_document_cloud.apply_async")
+    @patch("muckrock.foia.tasks.upload_document_cloud.delay")
     def test_clone_single(self, mock_upload):
         """Should duplicate the communication to the request."""
         other_foia = FOIARequestFactory()
@@ -243,9 +247,10 @@ class TestCommunicationClone(test.TestCase):
         nose.tools.assert_false(
             CommunicationMoveLog.objects.filter(communication=self.comm).exists()
         )
+        self.run_commit_hooks()
         mock_upload.assert_called()
 
-    @patch("muckrock.foia.tasks.upload_document_cloud.apply_async")
+    @patch("muckrock.foia.tasks.upload_document_cloud.delay")
     def test_clone_multi(self, mock_upload):
         """Should duplicate the communication to each request in the list."""
         first_foia = FOIARequestFactory()
@@ -270,9 +275,10 @@ class TestCommunicationClone(test.TestCase):
                     communication=clone, foia=self.comm.foia, user=self.user
                 ).exists()
             )
+        self.run_commit_hooks()
         mock_upload.assert_called()
 
-    @patch("muckrock.foia.tasks.upload_document_cloud.apply_async")
+    @patch("muckrock.foia.tasks.upload_document_cloud.delay")
     def test_clone_files(self, mock_upload):
         """Should duplicate all the files for each communication."""
         first_foia = FOIARequestFactory()
@@ -286,6 +292,7 @@ class TestCommunicationClone(test.TestCase):
                 file_count,
                 "Each clone should have its own set of files.",
             )
+        self.run_commit_hooks()
         mock_upload.assert_called()
 
     @raises(ValueError)
