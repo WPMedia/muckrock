@@ -4,6 +4,7 @@
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.core.files.storage import default_storage
+from django.db import transaction
 from django.http import (
     HttpResponse,
     HttpResponseBadRequest,
@@ -78,16 +79,11 @@ def success_comm(request):
     if len(request.POST["key"]) > 255:
         return HttpResponseBadRequest()
 
-    access = "private" if comm.foia.embargo else "public"
-    file_ = FOIAFile(
-        comm=comm,
-        title=os.path.basename(request.POST["key"]),
-        datetime=timezone.now(),
+    comm.attach_file(
+        path=request.POST["key"],
+        name=os.path.basename(request.POST["key"]),
         source=request.user.profile.full_name,
-        access=access,
     )
-    file_.ffile.name = request.POST["key"]
-    file_.save()
 
     return HttpResponse()
 

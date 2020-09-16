@@ -26,7 +26,3 @@ if boolcheck(os.environ.get("USE_CELERY_EMAIL", True)):
     EMAIL_BACKEND = "djcelery_email.backends.CeleryEmailBackend"
 else:
     EMAIL_BACKEND = "django_mailgun.MailgunBackend"
-
-MUCKROCK_URL = "https://www.muckrock.com"
-FOIAMACHINE_URL = "https://www.foiamachine.org"
-SQUARELET_URL = "https://accounts.muckrock.com"

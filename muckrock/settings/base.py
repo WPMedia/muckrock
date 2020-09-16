@@ -99,24 +99,20 @@ COMPRESS_JS_FILTERS = []
 THUMBNAIL_CACHE_DIMENSIONS = True
 
 if AWS_DEBUG:
-    DEFAULT_FILE_STORAGE = "storages.backends.s3boto.S3BotoStorage"
-    THUMBNAIL_DEFAULT_STORAGE = "storages.backends.s3boto.S3BotoStorage"
-    STATICFILES_STORAGE = "storages.backends.s3boto.S3BotoStorage"
+    DEFAULT_FILE_STORAGE = "muckrock.core.storage.MediaRootS3BotoStorage"
+    THUMBNAIL_DEFAULT_STORAGE = DEFAULT_FILE_STORAGE
+    STATICFILES_STORAGE = "muckrock.core.storage.CachedS3Boto3Storage"
     COMPRESS_STORAGE = STATICFILES_STORAGE
-    STATIC_URL = "https://muckrock-devel2.s3.amazonaws.com/"
+    STATIC_URL = "https://muckrock-devel2.s3.amazonaws.com/static/"
     COMPRESS_URL = STATIC_URL
     MEDIA_URL = "https://muckrock-devel2.s3.amazonaws.com/media/"
     CLEAN_S3_ON_FOIA_DELETE = True
-    USE_QUEUED_STORAGE = True
-    DIET_STORAGE = "storages.backends.s3boto.S3BotoStorage"
-    DIET_CONFIG = os.path.join(SITE_ROOT, "../config/image_diet.yaml")
     AWS_S3_CUSTOM_DOMAIN = ""
 else:
     STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
     STATIC_URL = "/static/"
     MEDIA_URL = "/media/"
     CLEAN_S3_ON_FOIA_DELETE = False
-    USE_QUEUED_STORAGE = False
 
 STATICFILES_FINDERS = (
     "django.contrib.staticfiles.finders.FileSystemFinder",
@@ -221,9 +217,7 @@ INSTALLED_APPS = (
     "taggit",
     "watson",
     "webpack_loader",
-    "image_diet",
     "django_hosts",
-    "queued_storage",
     "hijack",
     "compat",  # for hijack
     "django_filters",
@@ -302,6 +296,7 @@ CELERY_WORKER_CONCURRENCY = os.environ.get("CELERY_WORKER_CONCURRENCY")
 CELERY_REDIS_MAX_CONNECTIONS = os.environ.get("CELERY_REDIS_MAX_CONNECTIONS")
 if CELERY_REDIS_MAX_CONNECTIONS is not None:
     CELERY_REDIS_MAX_CONNECTIONS = int(CELERY_REDIS_MAX_CONNECTIONS)
+CELERY_TIMEZONE = TIME_ZONE
 
 AUTHENTICATION_BACKENDS = (
     "rules.permissions.ObjectPermissionBackend",
@@ -507,9 +502,19 @@ ORG_PRICE_PER_SEAT = 2000
 ORG_REQUESTS_PER_SEAT = 10
 
 # development urls
-MUCKROCK_URL = "http://dev.muckrock.com"
-FOIAMACHINE_URL = "http://dev.foiamachine.org"
-SQUARELET_URL = "http://dev.squarelet.com"
+MUCKROCK_URL = os.environ.get("MUCKROCK_URL", "http://dev.muckrock.com")
+FOIAMACHINE_URL = os.environ.get("FOIAMACHINE_URL", "http://dev.foiamachine.org")
+SQUARELET_URL = os.environ.get("SQUARELET_URL", "http://dev.squarelet.com")
+DOCCLOUD_URL = os.environ.get("DOCCLOUD_URL", "http://www.dev.documentcloud.org")
+DOCCLOUD_API_URL = os.environ.get(
+    "DOCCLOUD_API_URL", "http://api.dev.documentcloud.org"
+)
+DOCCLOUD_LEGACY_ASSET_URL = os.environ.get(
+    "DOCCLOUD_LEGACY_ASSET_URL", "https://assets.documentcloud.org/"
+)
+DOCCLOUD_ASSET_URL = os.environ.get(
+    "DOCCLOUD_ASSET_URL", "http://minio.documentcloud.org:9000/documents/"
+)
 
 # Limit CORS support to just API endpoints
 CORS_URLS_REGEX = r"^/api(_v\d)?/.*$"
@@ -710,3 +715,8 @@ ZENDESK_EMAIL = os.environ.get("ZENDESK_EMAIL", "")
 ZENDESK_SUBDOMAIN = os.environ.get("ZENDESK_SUBDOMAIN", "muckrock")
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
+
+DOCCLOUD_EXTENSIONS = os.environ.get("DOCCLOUD_EXTENSIONS", ".pdf,.doc,.docx").split(
+    ","
+)
+DOCCLOUD_PROCESSING_WAIT = int(os.environ.get("DOCCLOUD_PROCESSING_WAIT", 60))
