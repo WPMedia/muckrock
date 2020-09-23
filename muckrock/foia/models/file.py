@@ -149,6 +149,7 @@ class FOIAFile(models.Model):
 
     @property
     def show_embed(self):
+        """Should we show a DocumentCloud embed for this file?"""
         return self.is_doccloud() and self.doc_id and self.is_public and self.pages > 0
 
     class Meta:
