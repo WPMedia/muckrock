@@ -19,7 +19,7 @@ import re
 import chardet
 
 # MuckRock
-from muckrock.core.utils import new_action
+from muckrock.core.utils import UnclosableFile, new_action
 from muckrock.foia.models.file import FOIAFile
 from muckrock.foia.models.request import STATUS, FOIARequest
 from muckrock.foia.querysets import FOIACommunicationQuerySet
@@ -55,7 +55,7 @@ class FOIACommunication(models.Model):
         on_delete=models.PROTECT,
     )
 
-    subject = models.CharField(max_length=255, blank=True)
+    subject = models.CharField(max_length=255, blank=True, db_index=True)
     datetime = models.DateTimeField(db_index=True)
 
     response = models.BooleanField(
@@ -340,9 +340,10 @@ class FOIACommunication(models.Model):
             )
             if file_:
                 name = name[:233].encode("ascii", "ignore").decode()
-                logger.info("attaching file: %s closed: %s", file_, file_.closed)
-                foia_file.ffile.save(name, file_)
-                logger.info("file attached successfully")
+                # this closes the file_ when using the S3 backend, which is problematic
+                # if we need to use the file again for another request.
+                # Make the file unclosable
+                foia_file.ffile.save(name, UnclosableFile(file_))
             else:
                 foia_file.ffile.name = path
                 foia_file.save()
