@@ -269,6 +269,9 @@ $(".resend-communication select.resend-via").change(function() {
 $('document').ready(function(){
   $(".resend-communication select").trigger("change");
 });
+$(window).on('hashchange', function () {
+  $(".resend-communication select").trigger("change");
+});
 
 /* Admin Fix */
 
