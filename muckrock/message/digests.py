@@ -241,6 +241,12 @@ class ActivityDigest(Digest):
             subject += "s"
         return self.subject + ": " + subject
 
+    def render(self, context):
+        """Do not render if there is no activity to avoid needlessly fetching
+        auth tokens for wrapping URLs"""
+        if self.activity["count"] >= 1:
+            super(ActivityDigest, self).render(context)
+
     def send(self, fail_silently=False):
         """Don't send the email if there's no activity."""
         if self.activity["count"] < 1:
