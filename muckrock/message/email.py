@@ -50,14 +50,10 @@ class TemplateEmail(EmailMultiAlternatives):
             self.text_template = text_template
         if html_template:
             self.html_template = html_template
-        context = self.get_context_data(extra_context)
-        content = {
-            "text": render_to_string(self.get_text_template(), context),
-            "html": render_to_string(self.get_html_template(), context),
-        }
         self.bcc.append("diagnostics@muckrock.com")
-        self.body = content["text"]
-        self.attach_alternative(content["html"], "text/html")
+
+        context = self.get_context_data(extra_context)
+        self.render(context)
 
     def get_context_data(self, extra_context):
         """Sets basic context data and allow extra context to be passed in."""
@@ -73,6 +69,15 @@ class TemplateEmail(EmailMultiAlternatives):
             else:
                 raise TypeError('"extra_context" must be a dictionary')
         return context
+
+    def render(self, context):
+        """Render the text and html templates"""
+        content = {
+            "text": render_to_string(self.get_text_template(), context),
+            "html": render_to_string(self.get_html_template(), context),
+        }
+        self.body = content["text"]
+        self.attach_alternative(content["html"], "text/html")
 
     def get_text_template(self):
         """Returns the template specified by the subclass."""
