@@ -134,6 +134,7 @@ def upload_document_cloud(ffile_pk, **kwargs):
         "source": ffile.source,
         "description": ffile.description,
         "access": ffile.access,
+        "original_extension": ffile.get_extension(),
         "data": {},
     }
     foia = ffile.get_foia()
@@ -1030,7 +1031,7 @@ def prepare_snail_mail(comm_pk, category, switch, extra, force=False, **kwargs):
         (address and address.lob_errors(comm.foia.agency), "badadd"),
         (category == "a" and not config.AUTO_LOB_APPEAL and not force, "appeal"),
         (category == "p" and not config.AUTO_LOB_PAY and not force, "pay"),
-        (amount > settings.CHECK_LIMIT, "limit"),
+        (amount > settings.CHECK_LIMIT and not force, "limit"),
     ]:
         if test:
             create_snail_mail_task(reason)

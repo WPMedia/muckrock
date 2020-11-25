@@ -724,3 +724,8 @@ DOCCLOUD_EXTENSIONS = os.environ.get("DOCCLOUD_EXTENSIONS", ".pdf,.doc,.docx").s
 DOCCLOUD_PROCESSING_WAIT = int(os.environ.get("DOCCLOUD_PROCESSING_WAIT", 60))
 
 USE_SCOUT = False
+
+DOCCLOUD_EXTENSIONS = os.environ.get("DOCCLOUD_EXTENSIONS", ".pdf,.doc,.docx").split(
+    ","
+)
+DOCCLOUD_PROCESSING_WAIT = int(os.environ.get("DOCCLOUD_PROCESSING_WAIT", 60))
