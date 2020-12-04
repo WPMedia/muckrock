@@ -1,5 +1,6 @@
 """Signals for the task application"""
 # Django
+from django.conf import settings
 from django.db.models.signals import post_save
 from django.urls import reverse
 
@@ -139,7 +140,7 @@ def notify_project(sender, instance, created, **kwargs):
 def flagged(sender, instance, created, **kwargs):
     """Create a ticket after creation"""
     # pylint: disable=unused-argument
-    if created:
+    if created and settings.ENABLE_TICKETS:
         create_ticket.delay(instance.pk)
 
 
