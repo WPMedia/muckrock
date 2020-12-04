@@ -27,6 +27,9 @@ logger = logging.getLogger(__name__)
 )
 def plaid_checks():
     """Get transaction information from Plaid to record deposited checks"""
+    if not settings.PLAID_CLIENT_ID:
+        return
+
     client = plaid.Client(
         client_id=settings.PLAID_CLIENT_ID,
         secret=settings.PLAID_SECRET,
