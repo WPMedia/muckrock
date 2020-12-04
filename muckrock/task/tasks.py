@@ -107,6 +107,9 @@ def snail_mail_bulk_pdf_task(pdf_name, get, **kwargs):
 @task(ignore_result=True, max_retries=5, name="muckrock.task.tasks.create_ticket")
 def create_ticket(flag_pk, **kwargs):
     """Create a ticket from a flag"""
+    if not settings.ENABLE_TICKETS:
+        return
+
     try:
         flag = FlaggedTask.objects.get(pk=flag_pk)
     except FlaggedTask.DoesNotExist as exc:
@@ -137,5 +140,7 @@ def create_ticket(flag_pk, **kwargs):
 )
 def cleanup_flags():
     """Find any flags that failed to make it to zoho/zendesk and try again"""
+    if not settings.ENABLE_TICKETS:
+        return
     for flag in FlaggedTask.objects.filter(resolved=False):
         create_ticket.delay(flag.pk)

@@ -715,6 +715,7 @@ USE_ZENDESK = boolcheck(os.environ.get("USE_ZENDESK", False))
 ZENDESK_TOKEN = os.environ.get("ZENDESK_TOKEN", "")
 ZENDESK_EMAIL = os.environ.get("ZENDESK_EMAIL", "")
 ZENDESK_SUBDOMAIN = os.environ.get("ZENDESK_SUBDOMAIN", "muckrock")
+ENABLE_TICKETS = boolcheck(os.environ.get("ENABLE_TICKETS", True))
 
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
