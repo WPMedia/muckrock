@@ -32,7 +32,8 @@ ENV POSTGRES_PORT $POSTGRES_PORT
 RUN apt-get update && apt-get install -y --no-install-recommends \
   postgresql-client \
   libmemcached-dev \
-  libz-dev
+  libz-dev \
+  libffi-dev
 
 # install NVM
 ENV NVM_DIR /usr/local/nvm
@@ -56,6 +57,8 @@ RUN npm run build
 
 # Requirements are installed here to ensure they will be cached.
 RUN pip install -r pip/requirements.txt
+RUN pip install -r pip/dev-requirements.txt
+
 WORKDIR /app
 
 RUN mv compose/$DEPLOYMENT_ENV/django/entrypoint entrypoint

@@ -32,7 +32,8 @@ ENV POSTGRES_PORT $POSTGRES_PORT
 RUN apt-get update && apt-get install -y --no-install-recommends \
   postgresql-client \
   libmemcached-dev \
-  libz-dev
+  libz-dev \
+  libffi-dev
 
 # install NVM
 ENV NVM_DIR /usr/local/nvm
@@ -48,11 +49,11 @@ RUN curl https://raw.githubusercontent.com/creationix/nvm/v0.37.2/install.sh | b
 ENV NODE_PATH $NVM_DIR/v$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH
 
-# Requirements are installed here to ensure they will be cached.
-COPY ./pip /pip
-RUN pip install -r /pip/requirements.txt
-
 COPY . /app/
+
+RUN pip install -r /pip/requirements.txt
+RUN pip install -r /pip/dev-requirements.txt
+
 WORKDIR /app
 
 RUN mv compose/$DEPLOYMENT_ENV/django/celery/beat/start entrypoint
